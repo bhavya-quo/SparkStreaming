@@ -20,17 +20,6 @@ object KafkaProducer {
 
     setupLogging()
 
-    // Construct a regular expression (regex) to extract fields from raw Apache log lines
-    val pattern = apacheLogPattern()
-
-//    val kafkaParams = Map[String, Object](
-//      "bootstrap.servers" -> "localhost:9091,anotherhost:9091",
-//      "key.deserializer" -> classOf[StringDeserializer],
-//      "value.deserializer" -> classOf[StringDeserializer],
-//      "group.id" -> "use_a_separate_group_id_for_each_stream",
-//      "auto.offset.reset" -> "latest",
-//      "enable.auto.commit" -> (false: java.lang.Boolean)
-//    )
     val props:Properties = new Properties()
     props.put("bootstrap.servers","localhost:9092")
     props.put("key.serializer",
@@ -42,7 +31,7 @@ object KafkaProducer {
     val topic = "topic"
     try {
       for (i <- 0 to 15) {
-        val record = new ProducerRecord[String, String](topic, i.toString, "My Site is sparkbyexamples.com " + i)
+        val record = new ProducerRecord[String, String](topic, i.toString, "Message " + i)
         val metadata = producer.send(record)
         printf(s"sent record(key=%s value=%s) " +
           "meta(partition=%d, offset=%d)\n",
@@ -55,25 +44,6 @@ object KafkaProducer {
     }finally {
       producer.close()
     }
-
-
-
-//    val stream = KafkaUtils.createDirectStream[String, String](
-//      ssc,
-//      PreferConsistent,
-//      Subscribe[String, String](topics, kafkaParams)
-//    )
-
-
-
-
-
-
-//    //(topic, message)
-//    val keyValueStream = stream.map(record => (record.key, record.value))
-//    val messages = stream.map(record => record.value)
-//    //print 3 messages from each rdd
-//    messages.foreachRDD((rdd, time) => rdd.take(3).foreach(println))
 
     // Kick it off
     ssc.checkpoint("tmp/checkpoint")

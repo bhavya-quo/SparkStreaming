@@ -33,7 +33,7 @@ version := "0.1"
 //
 //)
 
-scalaVersion := "2.12.11"
+scalaVersion := "2.12.12"
 
 val sparkVersion = "2.4.5"
 
