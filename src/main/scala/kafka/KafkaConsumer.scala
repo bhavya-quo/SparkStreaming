@@ -11,12 +11,12 @@ import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
 import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
 
 /** Working example of listening for log data from Kafka's "topic1" topic on port 9091(broker 1's port). */
-object Kafka1 {
+object KafkaConsumer {
 
   def main(args: Array[String]) {
 
     // Create the context with a 1 second batch size
-    val ssc = new StreamingContext("local[*]", "KafkaExample", Seconds(1))
+    val ssc = new StreamingContext("local[*]", "KafkaConsumer", Seconds(1))
 
     setupLogging()
 
@@ -24,7 +24,7 @@ object Kafka1 {
     val pattern = apacheLogPattern()
 
     val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "localhost:9091,anotherhost:9091",
+      "bootstrap.servers" -> "localhost:9092",
       "key.deserializer" -> classOf[StringDeserializer],
       "value.deserializer" -> classOf[StringDeserializer],
       "group.id" -> "use_a_separate_group_id_for_each_stream",
@@ -39,10 +39,10 @@ object Kafka1 {
       Subscribe[String, String](topics, kafkaParams)
     )
     //(topic, message)
-    val KeyValueStream = stream.map(record => (record.key, record.value))
+    val keyValueStream = stream.map(record => (record.key, record.value))
     val messages = stream.map(record => record.value)
     //print 3 messages from each rdd
-    messages.foreachRDD((rdd, time) => rdd.take(3).foreach(println))
+    messages.foreachRDD((rdd, time) => rdd.foreach(println))
 
     // Kick it off
     ssc.checkpoint("tmp/checkpoint")
