@@ -5,7 +5,7 @@ import lib.Utilities._
 import org.apache.spark.sql.functions._
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.parquet.format.IntType
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types.{IntegerType, LongType, StringType, StructField, StructType, TimestampType}
 import org.apache.spark.streaming.kafka010._
 import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
@@ -47,11 +47,29 @@ object KafkaConsumerTwitter {
       import spark.implicits._
       val df = rdd.toDF()
 
-        df.selectExpr("CAST(_1 AS STRING)","CAST(_2 AS STRING)").show()
+        df.selectExpr("CAST(_2 AS STRING)").show()
 
       rdd.collect().foreach(tweet => {
-        println("Time: " + tweet._1 + ", Tweet: " + tweet._2)
-    })
+//        println("TimeStamp: " + tweet._1 + ", Tweet: " + tweet._2)
+
+        import org.apache.spark.sql.types._
+        val tweetSchema = new StructType()
+          .add($"id".string)
+          .add($"hashtags".array(StringType))
+          .add($"text".string)
+          .add($"timestamp".long)
+//        tweetSchema.printTreeString()
+        val output = rdd.toDF("_1","_2").select(from_json($"_2", tweetSchema.json, Map.empty[String, String]) as "json")
+          .select("json.*") // <-- flatten the struct field
+          .withColumn("hashtag", explode($"hashtags")) // <-- explode the array field
+          .drop("hashtags")  // <-- no longer needed
+          .select("id", "text", "timestamp", "hashtag")
+
+        output.show()
+        output.write.mode(SaveMode.Append).parquet("/home/bhavya/hdfs/test")
+        output.write.mode(SaveMode.Append).csv("/home/bhavya/hdfs/test/tweets.csv")
+
+      })
 
 
     })
